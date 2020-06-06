@@ -51,7 +51,19 @@ _retry_count = 3
 #
 # Attempts to fail elegantly - often an issue with permissions with the I2C 
 # bus. Users of this system should be added to the system i2c group
-#
+# If on BeagleBone select I2C bus #2, else I2C bus #1
+def _beagleTest():
+	try:
+		with open("/sys/bus/nvmem/devices/0-00500/nvmem", "rb") as eeprom:
+			eeprom_bytes = eeprom.read(16)
+	except FileNotFoundError:
+		return False
+
+	if eeprom_bytes[:9] != b"\xaaU3\xeeA335B":
+		return False
+
+	return True
+
 def _connectToI2CBus():
 
 	try:
@@ -60,7 +72,7 @@ def _connectToI2CBus():
 		print("Error: Unable to load smbus module. Unable to continue", file=sys.stderr)
 		return None
 
-	iBus = 1
+	iBus = 1 if not _beagleTest() else 2
 	daBus = None
 
 	error=False
